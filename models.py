@@ -47,6 +47,7 @@ class Member(Base):
     Age = Column(String(200), nullable=True)
     Refills = Column(String(200), nullable=True)
     Xan = Column(String(200), nullable=True)
+    XanThisMonth = Column(String(200), nullable=True)
     LSD = Column(String(200), nullable=True)
     StatEnhancers = Column(String(200), nullable=True)
 
@@ -63,6 +64,7 @@ class Member(Base):
             Age=self.Age,
             Refills=self.Refills,
             Xan=self.Xan,
+            XanThisMonth=self.XanThisMonth,
             LSD=self.LSD,
             StatEnhancers=self.StatEnhancers
         )
