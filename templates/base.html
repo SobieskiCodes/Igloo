@@ -1,0 +1,45 @@
+{% from 'bootstrap/nav.html' import render_nav_item %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>The Igloo</title>
+    {{ bootstrap.load_css() }}
+</head>
+<body>
+<main class="container">
+    <header>
+  <!-- Fixed navbar -->
+  <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
+    <a class="navbar-brand" href="">The Igloo</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarCollapse">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">Rackets</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/members">Members</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">War Base</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+</header>
+    {% block content %}{% endblock %}
+    <footer class="text-center">
+        {% block footer %}
+            <small> &copy; 2019 <a href="https://sobieski.codes" title="justin@sobieski.codes">Justin Sobieski [1517715]</a>
+            </small>
+        {% endblock %}
+    </footer>
+</main>
+
+
+</body>
+</html>

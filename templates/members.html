@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<body>
+<link href="{{ url_for('static', filename='css/ts.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jqts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ts.js') }}"></script>
+</body>
+<h1>Members</h1>
+<table id="members" class="tablesorter table table-hover">
+	<thead>
+		<tr>
+			<th scope="col">Last Seen</th>
+			<th scope="col">Name</th>
+			<th scope="col">Rank</th>
+            <th scope="col">Level</th>
+			<th scope="col">Age</th>
+			<th scope="col">Refills</th>
+            <th scope="col">Xan</th>
+            <th scope="col">LSD</th>
+            <th scope="col">SE's</th>
+		</tr>
+	</thead>
+	<tbody>
+	{% for member in members %}
+		<tr>
+			<td>{{ member.LastSeen }}</td>
+			<td><a href="https://www.torn.com/profiles.php?XID={{ member.TornID }}" title="Profile">{{ member.Name }}</a></td>
+			<td>{{ member.Rank }}</td>
+            <td>{{ member.Level }}</td>
+			<td>{{ member.Age }}</td>
+            <td>{{ member.Refills }}</td>
+            <td>{{ member.Xan }}</td>
+			<td>{{ member.LSD }}</td>
+            <td>{{ member.StatEnhancers }}</td>
+		</tr>
+	{% endfor %}
+	</tbody>
+</table>
+{% endblock %}

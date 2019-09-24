@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Rackets</h1>
+<table class="table table-hover">
+	<thead>
+		<tr>
+			<th scope="col">Name</th>
+			<th scope="col">Racket Name</th>
+			<th scope="col">Reward</th>
+			<th scope="col">Created</th>
+            <th scope="col">Changed</th>
+			<th scope="col">Territory Owner</th>
+			<th scope="col">Level</th>
+			<td></td>
+		</tr>
+	</thead>
+	<tbody>
+	{% for racket in rackets %}
+		<tr>
+			<td>{{ racket.TerritoryName }}</td>
+			<td>{{ racket.RacketName }}</td>
+			<td>{{ racket.Reward }}</td>
+			<td>{{ racket.Created | datetimefilter}}</td>
+            <td>{{ racket.Changed | datetimefilter}}</td>
+			<td><a href="https://www.torn.com/factions.php?step={{ racket.Owner }}" title="profile">{{ racket.OwnerName }}</a></td>
+			<td>{{ racket.Level }}</td>
+		</tr>
+	{% endfor %}
+	</tbody>
+</table>
+{% endblock %}
