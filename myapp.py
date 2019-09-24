@@ -50,6 +50,48 @@ def TheMembers():
 
     if request.method == "POST":
         to_json = json.loads(request.data.decode("utf-8").replace("'", '"'))
+        #print(to_json)
+        for member in to_json:
+            refills = 0
+            xan = 0
+            lsd = 0
+            se = 0
+            last_seen = 'Today'
+            xanthismonth = 0
+            if 'days' in to_json[member]['last_action']['relative'] or 'day' in to_json[member]['last_action']['relative']:
+                if 'day' in to_json[member]['last_action']['relative']:
+                    last_seen = 'Yesterday'
+                if 'days' in to_json[member]['last_action']['relative']:
+                    last_seen = to_json[member]['last_action']['relative']
+            if 'refills' in to_json[member]['personalstats']:
+                refills = to_json[member]['personalstats']['refills']
+            if 'xantaken' in to_json[member]['personalstats']:
+                xan = to_json[member]['personalstats']['xantaken']
+
+            if 'lsdtaken' in to_json[member]['personalstats']:
+                lsd = to_json[member]['personalstats']['lsdtaken']
+            if 'statenhancersused' in to_json[member]['personalstats']:
+                se = to_json[member]['personalstats']['statenhancersused']
+            user = Member.query.filter_by(TornID=member).first()
+            if not user:
+                test = Member(LastSeen=last_seen, TornID=member, Name=to_json[member]['name'], Rank=to_json[member]['rank'], Level=to_json[member]['level'], Age=to_json[member]['age'], Refills=refills, Xan=xan, XanThisMonth=xanthismonth, LSD=lsd, StatEnhancers=se)
+                db_session.add(test)
+                db_session.commit()
+            if user:
+                if xan != 0:
+                    if xan > user.Xan:
+                        xanthismonth = user.XanThisMonth + (xan - user.Xan)
+                user.LastSeen = last_seen
+                user.Name = to_json[member]['name']
+                user.Rank = to_json[member]['rank']
+                user.Level = to_json[member]['level']
+                user.Age = to_json[member]['age']
+                user.Refills = refills
+                user.Xan = xan
+                user.XanThisMonth = xanthismonth
+                user.LSD = lsd
+                user.StatEnhancers = se
+                db_session.commit()
         return "done"
 
 
