@@ -90,9 +90,7 @@ def themembers():
                 if xan != 0:
                     if xan > user.Xan:
                         print(user.XanThisMonth + (xan - user.Xan))
-                        xanthismonth = user.XanThisMonth + (xan - user.Xan)
-                    if not xan > user.Xan:
-                        xanthismonth = user.XanThisMonth
+                        user.XanThisMonth = user.XanThisMonth + (xan - user.Xan)
 
                 user.LastSeen = last_seen
                 user.Name = to_json[member]['name']
@@ -101,7 +99,7 @@ def themembers():
                 user.Age = to_json[member]['age']
                 user.Refills = refills
                 user.Xan = xan
-                user.XanThisMonth = xanthismonth
+                user.XanThisMonth = user.XanThisMonth
                 user.LSD = lsd
                 user.StatEnhancers = se
                 db_session.commit()
