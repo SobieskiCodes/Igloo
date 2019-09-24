@@ -6,13 +6,14 @@ import pytz
 from datetime import datetime
 import json
 
-def datetimefilter(value, format="%d/%m/%y %I:%M %p"):
+
+def datetimefilter(value, theformat="%d/%m/%y %I:%M %p"):
     value = datetime.fromtimestamp(value)
     tz = pytz.timezone('US/Eastern')
     utc = pytz.timezone('UTC')
     value = utc.localize(value, is_dst=None).astimezone(pytz.utc)
     local_dt = value.astimezone(tz)
-    return local_dt.strftime(format)
+    return local_dt.strftime(theformat)
 
 
 app = Flask(__name__)
@@ -21,6 +22,7 @@ app.secret_key = 'dev'
 app.config['DEBUG'] = False
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 bootstrap = Bootstrap(app)
+
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
@@ -40,7 +42,7 @@ def members():
 
 
 @app.route("/themembers", methods=('GET', 'POST'))
-def TheMembers():
+def themembers():
     if request.method == "GET":
         test = Member.query.order_by(Member.Level.desc()).all()
         the_dict = {}
@@ -56,31 +58,42 @@ def TheMembers():
             xan = 0
             lsd = 0
             se = 0
-            last_seen = 'Today'
             xanthismonth = 0
+            last_seen = 'Today'
+
             if 'days' in to_json[member]['last_action']['relative'] or 'day' in to_json[member]['last_action']['relative']:
                 if 'day' in to_json[member]['last_action']['relative']:
                     last_seen = 'Yesterday'
                 if 'days' in to_json[member]['last_action']['relative']:
                     last_seen = to_json[member]['last_action']['relative']
+
             if 'refills' in to_json[member]['personalstats']:
                 refills = to_json[member]['personalstats']['refills']
+
             if 'xantaken' in to_json[member]['personalstats']:
                 xan = to_json[member]['personalstats']['xantaken']
 
             if 'lsdtaken' in to_json[member]['personalstats']:
                 lsd = to_json[member]['personalstats']['lsdtaken']
+
             if 'statenhancersused' in to_json[member]['personalstats']:
                 se = to_json[member]['personalstats']['statenhancersused']
+
             user = Member.query.filter_by(TornID=member).first()
+            print(user.Xan)
             if not user:
                 test = Member(LastSeen=last_seen, TornID=member, Name=to_json[member]['name'], Rank=to_json[member]['rank'], Level=to_json[member]['level'], Age=to_json[member]['age'], Refills=refills, Xan=xan, XanThisMonth=xanthismonth, LSD=lsd, StatEnhancers=se)
                 db_session.add(test)
                 db_session.commit()
             if user:
+                print(user, xan, user.Xan, user.XanThisMonth)
                 if xan != 0:
                     if xan > user.Xan:
+                        print(user.XanThisMonth + (xan - user.Xan))
                         xanthismonth = user.XanThisMonth + (xan - user.Xan)
+                    if not xan > user.Xan:
+                        xanthismonth = user.XanThisMonth
+
                 user.LastSeen = last_seen
                 user.Name = to_json[member]['name']
                 user.Rank = to_json[member]['rank']
@@ -92,11 +105,12 @@ def TheMembers():
                 user.LSD = lsd
                 user.StatEnhancers = se
                 db_session.commit()
+
         return "done"
 
 
 @app.route("/therackets", methods=('GET', 'POST'))
-def TheRackets():
+def therackets():
     if request.method == "GET":
         test = Racket.query.order_by(Racket.Level.desc()).all()
         the_dict = {}
