@@ -49,8 +49,21 @@ def apitest():
         return jsonify({"message": "ERROR: Unauthorized"}), 401
 
 
-@app.route("/api/members/get", methods=['GET'])
-def getmembers():
+@app.route("/api/members/reset", methods=['POST'])
+def apimembersreset():
+    if request.headers.get("X-Api-Key") == api_key:
+        if request.method == "POST":
+            all_members = Member.query.order_by(Member.Level.desc()).all()
+            for member in all_members:
+                member.XanThisMonth = 0
+            db_session.commit()
+            return "all set", 200
+    else:
+        return jsonify({"message": "ERROR: Unauthorized"}), 401
+
+
+@app.route("/api/members", methods=['GET', 'PUT'])
+def apimembers():
     if request.headers.get("X-Api-Key") == api_key:
         if request.method == "GET":
             test = Member.query.order_by(Member.Level.desc()).all()
@@ -58,13 +71,7 @@ def getmembers():
             for item in test:
                 the_dict[item.TornID] = item.dict_info()
             return jsonify(the_dict), 200
-    else:
-        return jsonify({"message": "ERROR: Unauthorized"}), 401
 
-
-@app.route("/api/members/update", methods=['PUT'])
-def postmembers():
-    if request.headers.get("X-Api-Key") == api_key:
         if request.method == "PUT":
             to_json = json.loads(request.data.decode("utf-8").replace("'", '"'))
             #print(to_json)
@@ -121,21 +128,8 @@ def postmembers():
         return jsonify({"message": "ERROR: Unauthorized"}), 401
 
 
-@app.route("/api/members/reset", methods=['PATCH'])
-def resetxanmembers():
-    if request.headers.get("X-Api-Key") == api_key:
-        if request.method == "PATCH":
-            all_members = Member.query.order_by(Member.Level.desc()).all()
-            for member in all_members:
-                member.XanThisMonth = 0
-            db_session.commit()
-            return "all set", 200
-    else:
-        return jsonify({"message": "ERROR: Unauthorized"}), 401
-
-
-@app.route("/api/rackets/get", methods=['GET'])
-def getrackets():
+@app.route("/api/rackets", methods=['GET', 'PUT'])
+def apirackets():
     if request.headers.get("X-Api-Key") == api_key:
         if request.method == "GET":
             test = Racket.query.order_by(Racket.Level.desc()).all()
@@ -143,18 +137,14 @@ def getrackets():
             for item in test:
                 the_dict[item.TerritoryName] = item.dict_info()
             return jsonify(the_dict), 200
+
+        if request.headers.get("X-Api-Key") == api_key:
+            if request.method == "PUT":
+                to_json = json.loads(request.data.decode("utf-8").replace("'", '"'))
+                return "done", 200
     else:
         return jsonify({"message": "ERROR: Unauthorized"}), 401
 
-
-@app.route("/api/rackets/update", methods=['PUT'])
-def updaterackets():
-    if request.headers.get("X-Api-Key") == api_key:
-        if request.method == "PUT":
-            to_json = json.loads(request.data.decode("utf-8").replace("'", '"'))
-            return "done", 200
-    else:
-        return jsonify({"message": "ERROR: Unauthorized"}), 401
 
 
 if __name__ == "__main__":
