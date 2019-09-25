@@ -53,11 +53,11 @@ def apitest():
 def apimembersreset():
     if request.headers.get("X-Api-Key") == api_key:
         if request.method == "POST":
-            all_members = Member.query.order_by(Member.Level.desc()).all()
+            all_members = Member.query.order_by(Member.XanThisMonth.desc()).all()
             for member in all_members:
                 member.XanThisMonth = 0
             db_session.commit()
-            return "all set", 200
+            return jsonify({"message": f"Reset: {all_members}"}), 200
     else:
         return jsonify({"message": "ERROR: Unauthorized"}), 401
 
