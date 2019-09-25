@@ -66,9 +66,9 @@ def apimembersreset():
 def apimembers():
     if request.headers.get("X-Api-Key") == api_key:
         if request.method == "GET":
-            test = Member.query.order_by(Member.Level.desc()).all()
+            all_mems = Member.query.order_by(Member.Level.desc()).all()
             the_dict = {}
-            for item in test:
+            for item in all_mems:
                 the_dict[item.TornID] = item.dict_info()
             return jsonify(the_dict), 200
 
@@ -123,7 +123,7 @@ def apimembers():
                     user.LSD = lsd
                     user.StatEnhancers = se
                     db_session.commit()
-            return "done", 200
+            return "members done", 200
     else:
         return jsonify({"message": "ERROR: Unauthorized"}), 401
 
@@ -132,19 +132,41 @@ def apimembers():
 def apirackets():
     if request.headers.get("X-Api-Key") == api_key:
         if request.method == "GET":
-            test = Racket.query.order_by(Racket.Level.desc()).all()
+            get_rackets = Racket.query.order_by(Racket.Level.desc()).all()
             the_dict = {}
-            for item in test:
+            for item in get_rackets:
                 the_dict[item.TerritoryName] = item.dict_info()
             return jsonify(the_dict), 200
 
         if request.headers.get("X-Api-Key") == api_key:
             if request.method == "PUT":
                 to_json = json.loads(request.data.decode("utf-8").replace("'", '"'))
-                return "done", 200
+                input_list = [racket for racket in to_json]
+                the_rackets = Racket.query.order_by(Racket.Level.desc()).all()
+                db_list = [racket.TerritoryName for racket in the_rackets]
+                for racket in db_list:
+                    if racket not in input_list:
+                        racket_to_remove = Racket.query.filter_by(TerritoryName=racket).first()
+                        db_session.delete(racket_to_remove)
+                    if racket in input_list:
+                        racket_to_update = Racket.query.filter_by(TerritoryName=racket).first()
+                        racket_to_update.RacketName = to_json[racket]['name']
+                        racket_to_update.Reward = to_json[racket]['reward']
+                        racket_to_update.Changed = to_json[racket]['changed']
+                        racket_to_update.Owner = to_json[racket]['faction']
+                        racket_to_update.OwnerName = to_json[racket]['factionname']
+                        racket_to_update.Level = to_json[racket]['level']
+                db_session.commit()
+                for racket in input_list:
+                    if racket not in db_list:
+                        new_racket = Racket(TerritoryName=racket, RacketName=to_json[racket]['name'], Reward=to_json[racket]['reward'],
+                                      Created=to_json[racket]['created'], Changed=to_json[racket]['changed'],
+                                      Owner=to_json[racket]['faction'], OwnerName=to_json[racket]['factionname'], Level=to_json[racket]['level'])
+                        db_session.add(new_racket)
+                        db_session.commit()
+                return "rackets done", 200
     else:
         return jsonify({"message": "ERROR: Unauthorized"}), 401
-
 
 
 if __name__ == "__main__":
