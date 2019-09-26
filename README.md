@@ -216,6 +216,9 @@ Coming soon; structure for this is a bit different.
 
 ## TO DO
 Less API calls on Rackets - no need to call each faction for name if owner hasn't changed.
+
 Add full debugging/logging
+
 Setup 'Settings' page (api key generation, users etc)
+
 Add support for discord 0auth
