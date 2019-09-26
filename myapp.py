@@ -177,7 +177,7 @@ def apirackets():
         if request.headers.get("X-Api-Key") == api_key:
             if request.method == "PUT":
                 add_log('info', '/api/racket PUT received')
-                to_json = json.loads(request.data.decode("utf-8").replace("'", '"'))
+                to_json = json.loads(request.data)
                 input_list = [racket for racket in to_json]
                 the_rackets = Racket.query.order_by(Racket.Level.desc()).all()
                 db_list = [racket.TerritoryName for racket in the_rackets]
