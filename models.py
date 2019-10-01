@@ -68,3 +68,41 @@ class Member(Base):
             LSD=self.LSD,
             StatEnhancers=self.StatEnhancers
         )
+
+class WarBase(Base):
+    __tablename__ = 'WarBase'
+    LastSeen = Column(String(200), nullable=True)
+    Status = Column(String(200), nullable=True)
+    TornID = Column(String(200), primary_key=True)
+    Name = Column(String(200), nullable=True)
+    Rank = Column(String(200), nullable=True)
+    Level = Column(String(200), nullable=True)
+    Age = Column(String(200), nullable=True)
+    Refills = Column(String(200), nullable=True)
+    Xan = Column(String(200), nullable=True)
+    LSD = Column(String(200), nullable=True)
+    StatEnhancers = Column(String(200), nullable=True)
+
+    def __repr__(self):
+        return f'<Member: {self.Name} [{self.TornID}]>'
+
+    def dict_info(self):
+        return dict(
+            LastSeen=self.LastSeen,
+            Status=self.Status,
+            TornID=self.TornID,
+            Name=self.Name,
+            Rank=self.Rank,
+            Age=self.Age,
+            Refills=self.Refills,
+            Xan=self.Xan,
+            LSD=self.LSD,
+            StatEnhancers=self.StatEnhancers
+        )
+
+class Settings(Base):
+    __tablename__ = 'Settings'
+    WarbaseFaction = Column(String(20), primary_key=True)
+
+    def __repr__(self):
+        return f'<Settings: {self.WarbaseFaction}>'
