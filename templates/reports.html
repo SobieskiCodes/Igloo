@@ -1,0 +1,36 @@
+{% from 'helpers/_forms.html' import generate_fields with context %}
+{% extends 'base.html' %}
+{% block content %}
+
+<h1>Reports</h1>
+<form method="post">
+	{{ generate_fields(form) }}
+</form>
+{% for id in ids %}
+    <div id="{{id}}"></div>
+{% endfor %}
+
+<body>
+    <!-- D3.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+    <!-- Plotly.js -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+    <script type="text/javascript">
+        var graphs = {{graphJSON | safe}};
+        var ids = {{ids | safe}};
+        for(var i in graphs) {
+            Plotly.plot(ids[i], // the ID of the div, created above
+                        graphs[i].data,
+                        graphs[i].layout || {});
+        }
+    </script>
+    <script>
+        $("#Report").on('change', function () {
+            $("form").submit()
+        })
+    </script>
+</body>
+{% endblock %}

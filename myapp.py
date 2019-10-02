@@ -5,9 +5,11 @@ from flask_bootstrap import Bootstrap
 import pytz
 from datetime import datetime
 import json
-from forms import FactionIDForm
+from forms import FactionIDForm, ReportSelect
 import subprocess
 import os
+import plotly
+
 
 def datetimefilter(value, theformat="%d/%m/%y %I:%M %p"):
     value = datetime.fromtimestamp(value)
@@ -24,7 +26,8 @@ app.secret_key = 'dev'
 app.config['DEBUG'] = False
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 bootstrap = Bootstrap(app)
-api_key = os.environ.get('api_header_key') #this will be a system env that the bot can add to.
+api_key = os.environ.get('api_header_key')
+
 
 @app.teardown_appcontext
 def shutdown_session(exception=None):
@@ -35,6 +38,60 @@ def shutdown_session(exception=None):
 def index():
     get_rackets = Racket.query.order_by(Racket.Level.desc()).all()
     return render_template('index.html', rackets=get_rackets)
+
+
+@app.route('/reports', methods=['GET', 'POST'])
+def displayreports():
+    the_form = ReportSelect()
+    if request.method == "GET":
+        with open('./reports/report1.json') as json_file:
+            data = json.load(json_file)
+
+        x = []
+        y = []
+        for item in data:
+            x.append(data[item].get("Name"))
+            y.append(data[item].get("Xan"))
+        the_dict = [dict(x=x, y=y, type='bar')]
+        graphs = [
+            dict(
+                data=the_dict,
+                layout=dict(
+                    title='Report'
+                )
+            )
+        ]
+        ids = ['graph-{}'.format(i) for i, _ in enumerate(graphs)]
+        graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
+
+        return render_template('reports.html',
+                               ids=ids,
+                               graphJSON=graphJSON, form=the_form)
+
+    if request.method == "POST":
+        print(the_form.data)
+        with open(f'./reports/{the_form.data["Report"]}.json') as json_file:
+            data = json.load(json_file)
+
+        x = []
+        y = []
+        for item in data:
+            x.append(data[item].get("Name"))
+            y.append(data[item].get("Xan"))
+        the_dict = [dict(x=x, y=y, type='bar')]
+        graphs = [
+            dict(
+                data=the_dict,
+                layout=dict(
+                    title='Report'
+                )
+            )
+        ]
+        ids = ['graph-{}'.format(i) for i, _ in enumerate(graphs)]
+        graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
+        return render_template('reports.html',
+                               ids=ids,
+                               graphJSON=graphJSON, form=the_form)
 
 
 @app.route('/members')
@@ -334,7 +391,6 @@ def apiwarbase():
                         logging.warning(f'/api/warbase PUT updating member {user.Name} failed {e}')
                         db_session.rollback()
             logging.info(f'/api/warbase PUT completed')
-
 
 
 class Log:

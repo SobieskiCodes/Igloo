@@ -1,6 +1,10 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField
+from wtforms import StringField, SelectField
 from wtforms.validators import DataRequired, Length
+import os
+
+class ReportSelect(FlaskForm):
+    Report = SelectField('Select Report', choices=list((x[:-5], x[:-5]) for x in os.listdir("./reports") if x.endswith('.json')))
 
 
 class FactionIDForm(FlaskForm):
