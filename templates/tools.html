@@ -1,0 +1,52 @@
+{% from 'helpers/_forms.html' import generate_fields with context %}
+{% extends 'base.html' %}
+{% block content %}
+<h1>TEST</h1>
+<body>
+<div class="row justify-content-center my-5">
+  <div class="input-group col-6">
+    <div class="input-group-prepend">
+      <input type="submit" class="btn btn-success" value="Upload">
+    </div>
+    <div class="custom-file">
+      <input type=file name=file class="input-group-text">
+    </div>
+  </div>
+</div>
+
+
+   <form method="post">
+      <div class="row justify-content-center my-5">
+        <div class="col-4">
+            <div class="form-group">
+                <label for="BeforeCSV">Before CSV</label>
+                <select class="form-control" id="BeforeCSV" name="BeforeCSV">
+                    {% for item in beforeform %}
+                        <option value= "{{  item  }}"> {{ item }}</option>"
+                    {% endfor %}
+                </select>
+        </div>
+      </div>
+       <div class="col-4">
+            <div class="form-group">
+                <label for="AfterCSV">After CSV</label>
+                <select class="form-control" id="AfterCSV" name="AfterCSV">
+                    {% for item in afterform %}
+                        <option value= "{{  item  }}"> {{ item }}</option>"
+                    {% endfor %}
+                </select>
+          </div>
+        </div>
+      </div>
+
+        <div class="row">
+          <div class='col'>
+            <div class="float-right">
+              <input type="submit" class="btn btn-cts btn-primary pull-right" value="Generate Report">
+            </div>
+          </div>
+        </div>
+    </form>
+
+</body>
+{% endblock %}

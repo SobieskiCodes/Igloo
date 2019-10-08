@@ -18,7 +18,7 @@
 	<tbody>
 	{% for racket in rackets %}
 		<tr>
-			<td>{{ racket.TerritoryName }}</td>
+			<td><a href="https://www.torn.com/city.php#terrName={{ racket.TerritoryName }}" title="racket">{{ racket.TerritoryName }}</a></td>
 			<td>{{ racket.RacketName }}</td>
 			<td>{{ racket.Reward }}</td>
 			<td>{{ racket.Created | datetimefilter}}</td>

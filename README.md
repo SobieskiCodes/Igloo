@@ -13,6 +13,8 @@ PUT /api/members 		| Updates existing partial entries
 POST /api/members/reset | Takes no data, resets all month to 0
 GET /api/rackets 		| Returns stored data in DB
 PUT /api/rackets 		| Updates exisiting partial entries
+GET /api/warbase		| Returns stored data in DB
+PUT /api/warbase		| Updates existings partial entries | mostly used for the 'update' button.
 ```
 
 Header must include "X-Api-Key"

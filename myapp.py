@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, flash, redirect, url_for
+from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, send_file
 from database import db_session
 from models import Racket, Member, WarBase, Settings
 from flask_bootstrap import Bootstrap
@@ -9,6 +9,10 @@ from forms import FactionIDForm, ReportSelect
 import subprocess
 import os
 import plotly
+from werkzeug.utils import secure_filename
+import requests
+import pandas as pd
+from pathlib import Path
 
 
 def datetimefilter(value, theformat="%d/%m/%y %I:%M %p"):
@@ -27,8 +31,9 @@ app.config['DEBUG'] = False
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 bootstrap = Bootstrap(app)
 api_key = os.environ.get('api_header_key')
-
-
+UPLOAD_FOLDER = './csvs/'
+ALLOWED_EXTENSIONS = ['csv']
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db_session.remove()
@@ -40,58 +45,95 @@ def index():
     return render_template('index.html', rackets=get_rackets)
 
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def make_the_fucking_csv():
+        the_list = []
+        pys = Path("csvs")
+        the_list.append(" ")
+        for file in pys.glob("*.csv"):
+            file = str(file.name)
+            the_list.append(file)
+        return the_list
+
+
+@app.route("/tools", methods=["GET", "POST"])
+def thetool():
+    if request.method == "GET":
+        return render_template('tools.html', beforeform=make_the_fucking_csv(), afterform=make_the_fucking_csv())
+
+    if request.method == "POST":
+        if not request.form:
+            uploaded_files = request.files.getlist("file")
+            for file in uploaded_files:
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            return render_template('tools.html', beforeform=make_the_fucking_csv(), afterform=make_the_fucking_csv())
+
+        if request.form:
+            defbefore = pd.read_csv(f'./csvs/{request.form["BeforeCSV"]}')
+            defafter = pd.read_csv(f'./csvs/{request.form["AfterCSV"]}')
+            beforeLinkRemove = defbefore.drop(defbefore.columns[[1]], axis=1)
+            beforeLinkRemove.columns = ['Player', 'Before']
+            afterLinkRemove = defafter.drop(defafter.columns[[1]], axis=1)
+            afterLinkRemove.columns = ['Player', 'After']
+            new = (pd.concat([beforeLinkRemove, afterLinkRemove[afterLinkRemove.Player.isin(beforeLinkRemove.Player)]],
+                             sort=True, axis=1))
+            new = new.loc[:, ~new.columns.duplicated()]
+            new['Difference'] = new.apply(lambda x: x['After'] - x['Before'], axis=1)
+            faction_url = f"https://api.torn.com/faction/?selections=&key={os.environ.get('torn_api_key')}"
+            test = requests.get(faction_url)
+            members = test.json()
+            list_mems = list(members['members'][x]['name'] for x in members['members'])
+            new = new[new['Player'].isin(list_mems)]
+            new = new[new['Difference'] != 0]
+            new.to_csv(r'./csvs/csv3.csv', index=False)
+            return send_file('./csvs/csv3.csv', attachment_filename='completed.csv', as_attachment=True)
+
+
+def build_report(filename):
+    with open(f'./reports/{filename}.json') as json_file:
+        data = json.load(json_file)
+    x = []
+    y = []
+    for item in data:
+        x.append(data[item].get("Name"))
+        y.append(data[item].get("Xan"))
+    the_dict = [dict(x=x, y=y, type='bar')]
+    graphs = [
+        dict(
+            data=the_dict,
+            layout=dict(
+                title='Report'
+            )
+        )
+    ]
+    ids = ['graph-{}'.format(i) for i, _ in enumerate(graphs)]
+    graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
+    kwargs = [dict(x=list(data.keys()), y=list(item.get("y") for item in data.values()), type="bar")]
+    print(kwargs)
+    return ids, graphJSON
+
+
 @app.route('/reports', methods=['GET', 'POST'])
 def displayreports():
     the_form = ReportSelect()
     if request.method == "GET":
-        with open('./reports/report1.json') as json_file:
-            data = json.load(json_file)
-
-        x = []
-        y = []
-        for item in data:
-            x.append(data[item].get("Name"))
-            y.append(data[item].get("Xan"))
-        the_dict = [dict(x=x, y=y, type='bar')]
-        graphs = [
-            dict(
-                data=the_dict,
-                layout=dict(
-                    title='Report'
-                )
-            )
-        ]
-        ids = ['graph-{}'.format(i) for i, _ in enumerate(graphs)]
-        graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
-
-        return render_template('reports.html',
-                               ids=ids,
-                               graphJSON=graphJSON, form=the_form)
+        build_it = build_report('report1')
+        print(build_it)
+        ids = build_it[0]
+        graphJSON = build_it[1]
+        return render_template('reports.html', ids=ids, graphJSON=graphJSON, form=the_form)
 
     if request.method == "POST":
-        print(the_form.data)
-        with open(f'./reports/{the_form.data["Report"]}.json') as json_file:
-            data = json.load(json_file)
-
-        x = []
-        y = []
-        for item in data:
-            x.append(data[item].get("Name"))
-            y.append(data[item].get("Xan"))
-        the_dict = [dict(x=x, y=y, type='bar')]
-        graphs = [
-            dict(
-                data=the_dict,
-                layout=dict(
-                    title='Report'
-                )
-            )
-        ]
-        ids = ['graph-{}'.format(i) for i, _ in enumerate(graphs)]
-        graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
-        return render_template('reports.html',
-                               ids=ids,
-                               graphJSON=graphJSON, form=the_form)
+        build_it = build_report(the_form.data["Report"])
+        ids = build_it[0]
+        graphJSON = build_it[1]
+        return render_template('reports.html', ids=ids, graphJSON=graphJSON, form=the_form)
 
 
 @app.route('/members')
