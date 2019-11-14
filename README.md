@@ -11,6 +11,7 @@ GET /api/test 			| Test your header
 GET /api/members 		| Returns stored data in DB
 PUT /api/members 		| Updates existing partial entries
 POST /api/members/reset | Takes no data, resets all month to 0
+POST /api/members/clean | Takes no data, removes members no longer in faction
 GET /api/rackets 		| Returns stored data in DB
 PUT /api/rackets 		| Updates exisiting partial entries
 GET /api/warbase		| Returns stored data in DB
