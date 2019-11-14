@@ -1,8 +1,13 @@
 {% extends 'base.html' %}
-
 {% block content %}
+<body>
+<link href="{{ url_for('static', filename='css/ts.css') }}" rel="stylesheet">
+<script src="{{ url_for('static', filename='js/jquery.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jqts.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ts.js') }}"></script>
+</body>
 <h1>Rackets</h1>
-<table class="table table-hover">
+<table id="rackets" class="tablesorter table table-hover">
 	<thead>
 		<tr>
 			<th scope="col">Name</th>
@@ -12,7 +17,6 @@
             <th scope="col">Changed</th>
 			<th scope="col">Territory Owner</th>
 			<th scope="col">Level</th>
-			<td></td>
 		</tr>
 	</thead>
 	<tbody>
