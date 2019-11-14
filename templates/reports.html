@@ -1,15 +1,24 @@
-{% from 'helpers/_forms.html' import generate_fields with context %}
 {% extends 'base.html' %}
 {% block content %}
 
 <h1>Reports</h1>
-<form method="post">
-	{{ generate_fields(form) }}
-</form>
+   <form method="post">
+      <div class="row justify-content-center my-5">
+        <div class="col-4">
+            <div class="form-group">
+                <label for="Report">Select Report</label>
+                <select class="form-control" id="Report" name="Report">
+                    {% for item in form %}
+                        <option value= "{{  item  }}"> {{ item }}</option>"
+                    {% endfor %}
+                </select>
+        </div>
+      </div>
+      </div>
+   </form>
 {% for id in ids %}
     <div id="{{id}}"></div>
 {% endfor %}
-
 <body>
     <!-- D3.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
