@@ -5,7 +5,7 @@ from flask_bootstrap import Bootstrap
 import pytz
 from datetime import datetime
 import json
-from forms import FactionIDForm, ReportSelect
+from forms import FactionIDForm
 import subprocess
 import os
 import plotly
@@ -34,6 +34,8 @@ api_key = os.environ.get('api_header_key')
 UPLOAD_FOLDER = './csvs/'
 ALLOWED_EXTENSIONS = ['csv']
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
 @app.teardown_appcontext
 def shutdown_session(exception=None):
     db_session.remove()
@@ -51,13 +53,23 @@ def allowed_file(filename):
 
 
 def make_the_fucking_csv():
-        the_list = []
-        pys = Path("csvs")
-        the_list.append(" ")
-        for file in pys.glob("*.csv"):
-            file = str(file.name)
-            the_list.append(file)
-        return the_list
+    the_list = []
+    pys = Path("csvs")
+    the_list.append(" ")
+    for file in pys.glob("*.csv"):
+        file = str(file.name)
+        the_list.append(file)
+    return the_list
+
+
+def list_reports():
+    the_list = []
+    pys = Path("reports")
+    the_list.append(" ")
+    for file in pys.glob("*.json"):
+        file = str(file.name)
+        the_list.append(file)
+    return the_list
 
 
 @app.route("/tools", methods=["GET", "POST"])
@@ -75,34 +87,38 @@ def thetool():
             return render_template('tools.html', beforeform=make_the_fucking_csv(), afterform=make_the_fucking_csv())
 
         if request.form:
-            defbefore = pd.read_csv(f'./csvs/{request.form["BeforeCSV"]}')
-            defafter = pd.read_csv(f'./csvs/{request.form["AfterCSV"]}')
-            beforeLinkRemove = defbefore.drop(defbefore.columns[[1]], axis=1)
-            beforeLinkRemove.columns = ['Player', 'Before']
-            afterLinkRemove = defafter.drop(defafter.columns[[1]], axis=1)
-            afterLinkRemove.columns = ['Player', 'After']
-            new = (pd.concat([beforeLinkRemove, afterLinkRemove[afterLinkRemove.Player.isin(beforeLinkRemove.Player)]],
-                             sort=True, axis=1))
-            new = new.loc[:, ~new.columns.duplicated()]
-            new['Difference'] = new.apply(lambda x: x['After'] - x['Before'], axis=1)
-            faction_url = f"https://api.torn.com/faction/?selections=&key={os.environ.get('torn_api_key')}"
-            test = requests.get(faction_url)
-            members = test.json()
-            list_mems = list(members['members'][x]['name'] for x in members['members'])
-            new = new[new['Player'].isin(list_mems)]
-            new = new[new['Difference'] != 0]
-            new.to_csv(r'./csvs/csv3.csv', index=False)
-            return send_file('./csvs/csv3.csv', attachment_filename='completed.csv', as_attachment=True)
+            try:
+                defbefore = pd.read_csv(f'./csvs/{request.form["BeforeCSV"]}')
+                defafter = pd.read_csv(f'./csvs/{request.form["AfterCSV"]}')
+                beforeLinkRemove = defbefore.drop(defbefore.columns[[1]], axis=1)
+                beforeLinkRemove.columns = ['Player', 'Before']
+                afterLinkRemove = defafter.drop(defafter.columns[[1]], axis=1)
+                afterLinkRemove.columns = ['Player', 'After']
+                new = (
+                    pd.concat([beforeLinkRemove, afterLinkRemove[afterLinkRemove.Player.isin(beforeLinkRemove.Player)]],
+                              sort=True, axis=1))
+                new = new.loc[:, ~new.columns.duplicated()]
+                new['Difference'] = new.apply(lambda x: x['After'] - x['Before'], axis=1)
+                faction_url = f"https://api.torn.com/faction/?selections=&key={os.environ.get('torn_api_key')}"
+                test = requests.get(faction_url)
+                members = test.json()
+                list_mems = list(members['members'][x]['name'] for x in members['members'])
+                new = new[new['Player'].isin(list_mems)]
+                new = new[new['Difference'] != 0]
+                new.to_csv(r'./csvs/csv3.csv', index=False)
+                return send_file('./csvs/csv3.csv', attachment_filename='completed.csv', as_attachment=True)
+            except Exception as e:
+                logging.error(f'POST /tools {e}')
 
 
 def build_report(filename):
-    with open(f'./reports/{filename}.json') as json_file:
+    with open(f'./reports/{filename}') as json_file:
         data = json.load(json_file)
     x = []
     y = []
     for item in data:
         x.append(data[item].get("Name"))
-        y.append(data[item].get("Xan"))
+        y.append(data[item].get("XanThisMonth"))
     the_dict = [dict(x=x, y=y, type='bar')]
     graphs = [
         dict(
@@ -115,25 +131,20 @@ def build_report(filename):
     ids = ['graph-{}'.format(i) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
     kwargs = [dict(x=list(data.keys()), y=list(item.get("y") for item in data.values()), type="bar")]
-    print(kwargs)
+    #print(kwargs)
     return ids, graphJSON
 
 
 @app.route('/reports', methods=['GET', 'POST'])
 def displayreports():
-    the_form = ReportSelect()
     if request.method == "GET":
-        build_it = build_report('report1')
-        print(build_it)
-        ids = build_it[0]
-        graphJSON = build_it[1]
-        return render_template('reports.html', ids=ids, graphJSON=graphJSON, form=the_form)
+        return render_template('reports.html', form=list_reports())
 
     if request.method == "POST":
-        build_it = build_report(the_form.data["Report"])
+        build_it = build_report(request.form["Report"])
         ids = build_it[0]
         graphJSON = build_it[1]
-        return render_template('reports.html', ids=ids, graphJSON=graphJSON, form=the_form)
+        return render_template('reports.html', ids=ids, graphJSON=graphJSON, form=list_reports())
 
 
 @app.route('/members')
@@ -198,23 +209,6 @@ def apitest():
         return jsonify({"message": "ERROR: Unauthorized"}), 401
 
 
-@app.route("/api/members/reset", methods=['POST'])
-def apimembersreset():
-    if request.headers.get("X-Api-Key") == api_key:
-        if request.method == "POST":
-            all_members = Member.query.order_by(Member.XanThisMonth.desc()).all()
-            for member in all_members:
-                member.XanThisMonth = 0
-            db_session.commit()
-            the_dict = {}
-            for item in all_members:
-                the_dict[item.TornID] = item.dict_info()
-            logging.info(f'/api/members/reset GET sent {jsonify(the_dict)}')
-            return jsonify({"message": f"Reset: {the_dict}"}), 200
-    else:
-        return jsonify({"message": "ERROR: Unauthorized"}), 401
-
-
 @app.route("/api/members", methods=['GET', 'PUT'])
 def apimembers():
     if request.headers.get("X-Api-Key") == api_key:
@@ -236,7 +230,7 @@ def apimembers():
                 logging.warning(f'/api/member PUT failed to load json {exc}')
                 return jsonify(e)
 
-            #print(to_json)
+            # print(to_json)
             logging.info('/api/member PUT json passed')
             for member in to_json:
                 refills = 0
@@ -246,7 +240,8 @@ def apimembers():
                 xanthismonth = 0
                 last_seen = 'Today'
 
-                if 'days' in to_json[member]['last_action']['relative'] or 'day' in to_json[member]['last_action']['relative']:
+                if 'days' in to_json[member]['last_action']['relative'] or 'day' in to_json[member]['last_action'][
+                    'relative']:
                     if 'day' in to_json[member]['last_action']['relative']:
                         last_seen = 'Yesterday'
                     if 'days' in to_json[member]['last_action']['relative']:
@@ -266,7 +261,10 @@ def apimembers():
 
                 user = Member.query.filter_by(TornID=member).first()
                 if not user:
-                    test = Member(LastSeen=last_seen, TornID=member, Name=to_json[member]['name'], Rank=to_json[member]['rank'], Level=to_json[member]['level'], Age=to_json[member]['age'], Refills=refills, Xan=xan, XanThisMonth=xanthismonth, LSD=lsd, StatEnhancers=se)
+                    test = Member(LastSeen=last_seen, TornID=member, Name=to_json[member]['name'],
+                                  Rank=to_json[member]['rank'], Level=to_json[member]['level'],
+                                  Age=to_json[member]['age'], Refills=refills, Xan=xan, XanThisMonth=xanthismonth,
+                                  LSD=lsd, StatEnhancers=se)
                     db_session.add(test)
                     try:
                         logging.info(f'/api/member PUT adding member {test}')
@@ -300,6 +298,61 @@ def apimembers():
             return "members done", 200
     else:
         logging.warning(f'/api/member PUT unauthorized attempt')
+        return jsonify({"message": "ERROR: Unauthorized"}), 401
+
+
+@app.route("/api/members/clean", methods=['POST'])
+def apimembersclean():
+    if request.headers.get("X-Api-Key") == api_key:
+        if request.method == "POST":
+            try:
+                logging.info(f'/api/member/clean POST scrubbing the database')
+                all_members = Member.query.order_by(Member.Level.desc()).all()
+                get_db = {}
+                for item in all_members:
+                    get_db[item.TornID] = item.dict_info()
+                faction_url = f"https://api.torn.com/faction/?selections=&key={os.environ.get('torn_api_key')}"
+                test = requests.get(faction_url)
+                get_fac = test.json()['members']
+                logging.info(f'/api/members/clean POST get db{get_db}')
+                logging.info(f'/api/members/clean POST get fac{get_fac}')
+                for x in get_db:
+                    if str(x) not in get_fac and str(x) != "107444":  # probably dont wanna delete west...
+                        user = Member.query.filter_by(TornID=x).first()
+                        db_session.delete(user)
+                    db_session.commit()
+                logging.info(f'/api/member/clean POST scrubbed')
+                return "scrubbing done", 200
+            except Exception as e:
+                logging.error(f'/api/members/clean POST failed {e}')
+                return f"clean members failed: {e}", 500
+    else:
+        return jsonify({"message": "ERROR: Unauthorized"}), 401
+
+
+@app.route("/api/members/reset", methods=['POST'])
+def apimembersreset():
+    if request.headers.get("X-Api-Key") == api_key:
+        if request.method == "POST":
+            try:
+                all_members = Member.query.order_by(Member.XanThisMonth.desc()).all()
+                the_dict = {}
+                for item in all_members:
+                    the_dict[str(item.TornID)] = item.dict_info()
+                logging.info(f'/api/members/reset GET sent {jsonify(the_dict)}')
+                copy_dict = the_dict.copy()
+                today = datetime.today()
+                d1 = today.strftime("%b-%d-%Y")
+                with open(f'./reports/{d1}.json', 'w', encoding='utf-8') as f:
+                    json.dump(copy_dict, f, ensure_ascii=False, indent=4)
+                for member in all_members:
+                    member.XanThisMonth = 0
+                db_session.commit()
+                return jsonify({"message": f"Reset: {copy_dict}"}), 200
+            except Exception as e:
+                logging.info(f'/api/members/reset POST failed {e}')
+                db_session.rollback()
+    else:
         return jsonify({"message": "ERROR: Unauthorized"}), 401
 
 
@@ -341,9 +394,11 @@ def apirackets():
                     db_session.rollback()
                 for racket in input_list:
                     if racket not in db_list:
-                        new_racket = Racket(TerritoryName=racket, RacketName=to_json[racket]['name'], Reward=to_json[racket]['reward'],
-                                      Created=to_json[racket]['created'], Changed=to_json[racket]['changed'],
-                                      Owner=to_json[racket]['faction'], OwnerName=to_json[racket]['factionname'], Level=to_json[racket]['level'])
+                        new_racket = Racket(TerritoryName=racket, RacketName=to_json[racket]['name'],
+                                            Reward=to_json[racket]['reward'],
+                                            Created=to_json[racket]['created'], Changed=to_json[racket]['changed'],
+                                            Owner=to_json[racket]['faction'], OwnerName=to_json[racket]['factionname'],
+                                            Level=to_json[racket]['level'])
                         db_session.add(new_racket)
                         try:
                             logging.info(f'/api/rackets PUT updating rackets')
@@ -377,7 +432,7 @@ def apiwarbase():
                 logging.warning(f'/api/warbase PUT failed to load json {exc}')
                 return jsonify(e)
 
-            #print(to_json)
+            # print(to_json)
             logging.info('/api/warbase PUT json passed')
             for member in to_json:
                 refills = 0
@@ -386,7 +441,8 @@ def apiwarbase():
                 se = 0
                 last_seen = 'Today'
 
-                if 'days' in to_json[member]['last_action']['relative'] or 'day' in to_json[member]['last_action']['relative']:
+                if 'days' in to_json[member]['last_action']['relative'] or 'day' in to_json[member]['last_action'][
+                    'relative']:
                     if 'day' in to_json[member]['last_action']['relative']:
                         last_seen = 'Yesterday'
                     if 'days' in to_json[member]['last_action']['relative']:
@@ -406,7 +462,10 @@ def apiwarbase():
 
                 user = WarBase.query.filter_by(TornID=member).first()
                 if not user:
-                    test = WarBase(LastSeen=last_seen, Status=to_json[member]['status'][0], TornID=member, Name=to_json[member]['name'], Rank=to_json[member]['rank'], Level=to_json[member]['level'], Age=to_json[member]['age'], Refills=refills, Xan=xan, LSD=lsd, StatEnhancers=se)
+                    test = WarBase(LastSeen=last_seen, Status=to_json[member]['status'][0], TornID=member,
+                                   Name=to_json[member]['name'], Rank=to_json[member]['rank'],
+                                   Level=to_json[member]['level'], Age=to_json[member]['age'], Refills=refills, Xan=xan,
+                                   LSD=lsd, StatEnhancers=se)
                     db_session.add(test)
                     try:
                         logging.info(f'/api/warbase PUT adding member {test.Name}')
