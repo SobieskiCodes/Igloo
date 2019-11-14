@@ -56,6 +56,15 @@
                 sortResetKey: 'ctrlKey'
             });
 
+            $("#rackets").tablesorter({
+                theme: "blue",
+                widthFixed: true,
+                widgets: ["zebra", "filter"],
+                headerTemplate: "{content}{icon}",
+                sortMultiSortKey: "shiftKey",
+                sortResetKey: 'ctrlKey'
+            });
+
             $("#check_form").submit(function(e){
                 e.preventDefault();
                 var visible = $('.player').not('.filtered');
