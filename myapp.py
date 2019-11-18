@@ -117,8 +117,9 @@ def build_report(filename):
     x = []
     y = []
     for item in data:
-        x.append(data[item].get("Name"))
-        y.append(data[item].get("XanThisMonth"))
+        if data[item].get('XanThisMonth'):
+            x.append(data[item].get("Name"))
+            y.append(data[item].get('XanThisMonth'))
     the_dict = [dict(x=x, y=y, type='bar')]
     graphs = [
         dict(
@@ -310,6 +311,7 @@ def apimembersclean():
                 all_members = Member.query.order_by(Member.Level.desc()).all()
                 get_db = {}
                 for item in all_members:
+                    item.Status = '0'
                     get_db[item.TornID] = item.dict_info()
                 faction_url = f"https://api.torn.com/faction/?selections=&key={os.environ.get('torn_api_key')}"
                 test = requests.get(faction_url)
