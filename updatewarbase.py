@@ -24,7 +24,7 @@ def main(facid):
         for member in members['members']:
             logging.info(f'/warbase {member}')
             tes = requests.get(f'https://api.torn.com/user/{member}?selections=profile,personalstats&key={torn_key}')
-            if tes.status_code != 200:
+            if tes.status_code == 200:
                 the_json = tes.json()
                 the_dict[member] = the_json
                 time.sleep(5)
