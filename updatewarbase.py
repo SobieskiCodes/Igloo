@@ -16,6 +16,9 @@ def main(facid):
         test = requests.get(faction_url)
         if test.status_code == 200:
             members = test.json()
+        if test.status_code != 200:
+                logging.info(f'/warbase torn status {test.status_code}')
+                return
 
         the_dict = {}
         for member in members['members']:
