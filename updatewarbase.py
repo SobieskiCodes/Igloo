@@ -3,8 +3,10 @@ import json
 import time
 import sys
 import os
+
 header = {'X-Api-Key': os.environ.get('api_header_key')}
 torn_key = os.environ.get('torn_api_key')
+
 
 def main(facid):
     logging.info('/warbase starting war update')
@@ -14,21 +16,26 @@ def main(facid):
         test = requests.get(faction_url)
         if test.status_code == 200:
             members = test.json()
-    
+
         the_dict = {}
         for member in members['members']:
+            logging.info(f'/warbase {member}')
             tes = requests.get(f'https://api.torn.com/user/{member}?selections=profile,personalstats&key={torn_key}')
-            if tes.status_code == 200:
+            if tes.status_code != 200:
                 the_json = tes.json()
                 the_dict[member] = the_json
                 time.sleep(5)
-    
+            if tes.status_code != 200:
+                logging.info(f'/warbase torn status {tes.status_code}')
+                return
+
         testing = json.dumps(the_dict)
         logging.info('/warbase sending dict')
         requests.put("https://probsjust.in/api/warbase", data=testing, headers=header)
         logging.info(f'/warbase sending dict')
     except Exception as e:
         logging.error(f'/warbase {e}')
+
 
 class Log:
     def __init__(self, file_name: str):
