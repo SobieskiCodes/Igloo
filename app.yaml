@@ -1,0 +1,4 @@
+runtime: python37
+env_variables:
+  api_header_key: "802e3a09-f0bf-4536-b30d-37629d490c99"
+  torn_api_key: "DNE7C9uU2Jb0Xc5A"
