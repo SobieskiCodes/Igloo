@@ -8,24 +8,27 @@ torn_key = os.environ.get('torn_api_key')
 
 def main(facid):
     logging.info('/warbase starting war update')
-    members = {}
-    faction_url = f"https://api.torn.com/faction/{facid}?selections=&key={torn_key}"
-    test = requests.get(faction_url)
-    if test.status_code == 200:
-        members = test.json()
-
-    the_dict = {}
-    for member in members['members']:
-        tes = requests.get(f'https://api.torn.com/user/{member}?selections=profile,personalstats&key={torn_key}')
-        if tes.status_code == 200:
-            the_json = tes.json()
-            the_dict[member] = the_json
-            time.sleep(5)
-
-    testing = json.dumps(the_dict)
-    logging.info('/warbase sending dict')
-    requests.put("https://probsjust.in/api/warbase", data=testing, headers=header)
-    logging.info(f'/warbase sending dict')
+    try:
+        members = {}
+        faction_url = f"https://api.torn.com/faction/{facid}?selections=&key={torn_key}"
+        test = requests.get(faction_url)
+        if test.status_code == 200:
+            members = test.json()
+    
+        the_dict = {}
+        for member in members['members']:
+            tes = requests.get(f'https://api.torn.com/user/{member}?selections=profile,personalstats&key={torn_key}')
+            if tes.status_code == 200:
+                the_json = tes.json()
+                the_dict[member] = the_json
+                time.sleep(5)
+    
+        testing = json.dumps(the_dict)
+        logging.info('/warbase sending dict')
+        requests.put("https://probsjust.in/api/warbase", data=testing, headers=header)
+        logging.info(f'/warbase sending dict')
+    except Exception as e:
+        logging.error(f'/warbase {e}')
 
 class Log:
     def __init__(self, file_name: str):
