@@ -106,6 +106,7 @@ def test123():
         return render_template('companies.html', companies=Company.query.order_by(Company.ID.desc()).all())
 
     if request.method == "GET":
+        flash('This page is deprecated and no longer maintained. It is merely here for preservation.', 'danger')
         return render_template('companies.html', companies=Company.query.order_by(Company.ID.desc()).all())
 
 
@@ -114,6 +115,7 @@ def test222():
     companyid = request.args.get('companyid', default=1, type=str)
     db_query = Company.query.filter_by(ID=companyid).first()
     if db_query:
+        flash('This page is deprecated and no longer maintained. It is merely here for preservation.', 'danger')
         return render_template('employees.html', employees=Employees.query.filter_by(CompanyID=companyid).all(),
                                title=db_query.CompanyName)
     else:
@@ -124,6 +126,7 @@ def test222():
 @app.route('/organizedcrime', methods=["GET", "POST"])
 def test233():
     if request.method == "GET":
+        flash('This page is deprecated and no longer maintained. It is merely here for preservation.', 'danger')
         db_query = OCs.query.order_by(OCs.CE).all()
         return render_template('oc.html', people=db_query)
 
@@ -546,7 +549,7 @@ def apimembersclean():
                 logging.info(f'/api/members/clean POST get db{get_db}')
                 logging.info(f'/api/members/clean POST get fac{get_fac}')
                 for x in get_db:
-                    if str(x) not in get_fac and str(x) != "107444":  # probably dont wanna delete west...
+                    if str(x) not in get_fac: #and str(x) != "107444":  # probably dont wanna delete west...
                         user = Member.query.filter_by(TornID=x).first()
                         db_session.delete(user)
                     db_session.commit()
