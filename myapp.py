@@ -554,7 +554,7 @@ def apimembersclean():
                         db_session.delete(user)
                     db_session.commit()
                 logging.info(f'/api/member/clean POST scrubbed')
-                return "scrubbing done", 200
+                return jsonify({"message": f"scrubbing done"}), 200
             except Exception as e:
                 logging.error(f'/api/members/clean POST failed {e}')
                 return f"clean members failed: {e}", 500
