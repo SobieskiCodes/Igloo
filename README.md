@@ -24,7 +24,8 @@ GET's return valid json.
 
 PUT request must be valid json.
 
-python example; header = {'X-Api-Key': 'xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'}
+python example; header = {'X-Api-Key': 'xxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'}  
+
 sudo systemctl restart myproject to restart
 
 ## Structure for members can be found below.
