@@ -18,6 +18,7 @@ parser = ConfigParser()
 parser.read('config.ini')
 torn_key = parser.get('secrets', 'torn_api_key')
 api_key = parser.get('secrets', 'api_header_key')
+facs = {'igloo': 18569, 'op': 27312}
 
 
 def datetimefilter(value, theformat="%d/%m/%y %I:%M %p"):
@@ -132,8 +133,8 @@ def test233():
 
     if request.method == "POST":
         print(request.form.get('id'))
-        for k,v in request.form.items():
-            print(k,v )
+        for k, v in request.form.items():
+            print(k, v)
         try:
             get_person = OCs.query.filter_by(ID=request.form.get('id')).first()
             if get_person:
@@ -256,11 +257,15 @@ def displayreports():
         return render_template('reports.html', ids=ids, graphJSON=graphJSON, form=list_reports())
 
 
-@app.route('/members')
-def members():
-    get_members = Member.query.order_by(Member.Level.desc()).all()
+@app.route('/igloo')
+def igloo():
+    get_members = Member.query.filter(Member.Fac == facs['igloo']).all()
     return render_template('members.html', members=get_members)
 
+@app.route('/op')
+def op():
+    get_members = Member.query.filter(Member.Fac == facs['op']).all()
+    return render_template('members.html', members=get_members)
 
 class Enemy:
     def __init__(self, fac, id, nm, rk, lvl, ag, ref, xan, lsd, se, aw, logins):
@@ -455,7 +460,9 @@ def apimembers():
         if request.method == "PUT":
             try:
                 logging.info('/api/member PUT received')
-                to_json = json.loads(request.data)
+                check_json = json.loads(request.data)
+                to_json = check_json['members']
+                fac_id = check_json['ID']
             except Exception as e:
                 exc = f'{type(e).__name__}: {e}'
                 logging.warning(f'/api/member PUT failed to load json {exc}')
@@ -490,12 +497,13 @@ def apimembers():
                 if 'statenhancersused' in to_json[member]['personalstats']:
                     se = to_json[member]['personalstats']['statenhancersused']
 
+
                 user = Member.query.filter_by(TornID=member).first()
                 if not user:
                     test = Member(LastSeen=last_seen, TornID=member, Name=to_json[member]['name'],
                                   Rank=to_json[member]['rank'], Level=to_json[member]['level'],
                                   Age=to_json[member]['age'], Refills=refills, Xan=xan, XanThisMonth=xanthismonth,
-                                  LSD=lsd, StatEnhancers=se)
+                                  LSD=lsd, StatEnhancers=se, Fac=fac_id)
                     db_session.add(test)
                     try:
                         logging.info(f'/api/member PUT adding member {test}')
@@ -519,6 +527,7 @@ def apimembers():
                     user.XanThisMonth = user.XanThisMonth
                     user.LSD = lsd
                     user.StatEnhancers = se
+                    user.Fac = fac_id
                     try:
                         logging.info(f'/api/member PUT updating member {user.Name}')
                         db_session.commit()
@@ -543,18 +552,19 @@ def apimembersclean():
                 for item in all_members:
                     item.Status = '0'
                     get_db[item.TornID] = item.dict_info()
-                faction_url = f"https://api.torn.com/faction/?selections=&key={torn_key}"
-                test = requests.get(faction_url)
-                get_fac = test.json()['members']
-                logging.info(f'/api/members/clean POST get db{get_db}')
-                logging.info(f'/api/members/clean POST get fac{get_fac}')
-                for x in get_db:
-                    if str(x) not in get_fac: #and str(x) != "107444":  # probably dont wanna delete west...
-                        user = Member.query.filter_by(TornID=x).first()
-                        db_session.delete(user)
-                    db_session.commit()
-                logging.info(f'/api/member/clean POST scrubbed')
-                return jsonify({"message": f"scrubbing done"}), 200
+                for f in facs.values():
+                    faction_url = f"https://api.torn.com/faction/{f}?selections=&key={torn_key}"
+                    test = requests.get(faction_url)
+                    get_fac = test.json()['members']
+                    logging.info(f'/api/members/clean POST get db{get_db}')
+                    logging.info(f'/api/members/clean POST get fac{get_fac}')
+                    for x in get_db:
+                        if str(x) not in get_fac:
+                            user = Member.query.filter_by(TornID=x).first()
+                            db_session.delete(user)
+                        db_session.commit()
+                    logging.info(f'/api/member/clean POST scrubbed')
+                    return jsonify({"message": f"scrubbing done"}), 200
             except Exception as e:
                 logging.error(f'/api/members/clean POST failed {e}')
                 return f"clean members failed: {e}", 500
