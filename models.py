@@ -67,7 +67,7 @@ class Member(Base):
             Xan=self.Xan,
             XanThisMonth=self.XanThisMonth,
             LSD=self.LSD,
-            StatEnhancers=self.StatEnhancersc,
+            StatEnhancers=self.StatEnhancers,
             Fac=self.Fac
         )
 
