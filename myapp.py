@@ -627,6 +627,7 @@ def apirackets():
                         racket_to_update.Changed = to_json[racket]['changed']
                         racket_to_update.Owner = to_json[racket]['faction']
                         racket_to_update.OwnerName = to_json[racket]['factionname']
+                        racket_to_update.Sector = to_json[racket]['sector']
                         racket_to_update.Level = to_json[racket]['level']
                 try:
                     logging.info(f'/api/rackets PUT updating rackets')
@@ -640,7 +641,7 @@ def apirackets():
                                             Reward=to_json[racket]['reward'],
                                             Created=to_json[racket]['created'], Changed=to_json[racket]['changed'],
                                             Owner=to_json[racket]['faction'], OwnerName=to_json[racket]['factionname'],
-                                            Level=to_json[racket]['level'])
+                                            Sector=to_json[racket]['sector'], Level=to_json[racket]['level'])
                         db_session.add(new_racket)
                         try:
                             logging.info(f'/api/rackets PUT updating rackets')
