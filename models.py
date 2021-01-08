@@ -13,6 +13,7 @@ class Racket(Base):
     Changed = Column(String(60), nullable=True)
     Owner = Column(String(60), nullable=True)
     OwnerName = Column(String(80), nullable=True)
+    Sector = Column(String(3), nullable=True)
     Level = Column(String(80), nullable=False)
 
     def __repr__(self):
@@ -32,6 +33,7 @@ class Racket(Base):
             Changed=self.Changed,
             Owner=self.Owner,
             OwnerName=self.OwnerName,
+            Sector=self.Sector,
             Level=self.Level
         )
 
@@ -67,7 +69,7 @@ class Member(Base):
             Xan=self.Xan,
             XanThisMonth=self.XanThisMonth,
             LSD=self.LSD,
-            StatEnhancers=self.StatEnhancers,
+            StatEnhancers=self.StatEnhancersc,
             Fac=self.Fac
         )
 
@@ -108,6 +110,7 @@ class Settings(Base):
 
     def __repr__(self):
         return f'<Settings: {self.WarbaseFaction}>'
+    
 class Company(Base):
     __tablename__ = 'Companies'
     ID = Column(String(200), primary_key=True)
