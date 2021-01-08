@@ -14,11 +14,13 @@ import requests
 import pandas as pd
 from pathlib import Path
 from configparser import ConfigParser
+from datetime import datetime
 parser = ConfigParser()
 parser.read('config.ini')
 torn_key = parser.get('secrets', 'torn_api_key')
 api_key = parser.get('secrets', 'api_header_key')
 facs = {'igloo': 18569, 'op': 27312}
+
 
 
 def datetimefilter(value, theformat="%d/%m/%y %I:%M %p"):
@@ -39,6 +41,11 @@ bootstrap = Bootstrap(app)
 UPLOAD_FOLDER = './csvs/'
 ALLOWED_EXTENSIONS = ['csv']
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+
+@app.context_processor
+def inject_now():
+    return {'now': datetime.utcnow()}
 
 
 @app.teardown_appcontext
