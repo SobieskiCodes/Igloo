@@ -16,6 +16,7 @@
 			<th scope="col">Created</th>
             <th scope="col">Changed</th>
 			<th scope="col">Territory Owner</th>
+			<th scope="col">Sector</th>
 			<th scope="col">Level</th>
 		</tr>
 	</thead>
@@ -28,6 +29,7 @@
 			<td>{{ racket.Created | datetimefilter}}</td>
             <td>{{ racket.Changed | datetimefilter}}</td>
 			<td><a href="https://www.torn.com/factions.php?step={{ racket.Owner }}" title="profile">{{ racket.OwnerName }}</a></td>
+			<td>{{ racket.Sector }}</td>			
 			<td>{{ racket.Level }}</td>
 		</tr>
 	{% endfor %}
