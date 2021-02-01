@@ -559,19 +559,21 @@ def apimembersclean():
                 for item in all_members:
                     item.Status = '0'
                     get_db[item.TornID] = item.dict_info()
+                both_facs = {}
                 for f in facs.values():
                     faction_url = f"https://api.torn.com/faction/{f}?selections=&key={torn_key}"
                     test = requests.get(faction_url)
                     get_fac = test.json()['members']
                     logging.info(f'/api/members/clean POST get db{get_db}')
                     logging.info(f'/api/members/clean POST get fac{get_fac}')
-                    for x in get_db:
-                        if str(x) not in get_fac:
-                            user = Member.query.filter_by(TornID=x).first()
-                            db_session.delete(user)
-                        db_session.commit()
-                    logging.info(f'/api/member/clean POST scrubbed')
-                    return jsonify({"message": f"scrubbing done"}), 200
+                    both_facs.update(get_fac)
+                for x in get_db:
+                    if str(x) not in both_facs:
+                        user = Member.query.filter_by(TornID=x).first()
+                        db_session.delete(user)
+                    db_session.commit()
+                logging.info(f'/api/member/clean POST scrubbed')
+                return jsonify({"message": f"scrubbing done"}), 200
             except Exception as e:
                 logging.error(f'/api/members/clean POST failed {e}')
                 return f"clean members failed: {e}", 500

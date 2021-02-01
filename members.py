@@ -34,7 +34,7 @@ def main():
         print(test)
         print('sending mems to server')
         try:
-            requests.put("http://127.0.0.1:5000/api/members", headers=header, data=test)
+            requests.put("http://probsjust.in/api/members", headers=header, data=test)
         except Exception as e:
             exc = f'{type(e).__name__}: {e}'
             print(f'Failed to update mems {e}\n{exc}')
