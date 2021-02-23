@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+	<h1>OC's</h1>
+	<input type="submit" value="send"  style="display:none;" />
+	<table id="organizedc" class="tablesorter table table-hover">
+			<thead>
+			<tr>
+				<th scope="col">Name</th>
+				<th scope="col">CE</th>
+				<th scope="col">Notes 1</th>
+				<th scope="col">Notes e</th>
+			</tr>
+		</thead>
+		<tbody>
+
+		{% for person in people %}
+			<tr data-player="{{ person.ID }}">
+				<td id="Link"><a href="https://www.torn.com/profiles.php?XID={{ person.ID }}" title="link" id="Name">{{ person.Name }}</a></td>
+				<td contenteditable id="CE">{{ person.CE }}</td>
+				<td contenteditable id="PersonalNote">{{ person.PersonalNote }}</td>
+				<td contenteditable id="OtherNote">{{ person.OtherNote }}</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+{% block javascript %}
+    <script src="{{ url_for('static', filename='js/test.js') }}"></script>
+{% endblock %}
+{% endblock %}
+
