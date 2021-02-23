@@ -1,3 +1,6 @@
+
+
+
 from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, send_file
 from database import db_session
 from models import Racket, Member, WarBase, Settings, Company, Employees, OCs
@@ -15,11 +18,13 @@ import pandas as pd
 from pathlib import Path
 from configparser import ConfigParser
 from datetime import datetime
+from discord_webhook import DiscordWebhook, DiscordEmbed
 parser = ConfigParser()
 parser.read('config.ini')
 torn_key = parser.get('secrets', 'torn_api_key')
 api_key = parser.get('secrets', 'api_header_key')
 facs = {'igloo': 18569, 'op': 27312}
+
 
 
 
@@ -139,9 +144,9 @@ def test233():
         return render_template('oc.html', people=db_query)
 
     if request.method == "POST":
-        print(request.form.get('id'))
         for k, v in request.form.items():
-            print(k, v)
+            logging.info(f"POST /oc {k, v}, {request.form.get('id')}")
+
         try:
             get_person = OCs.query.filter_by(ID=request.form.get('id')).first()
             if get_person:
@@ -153,11 +158,15 @@ def test233():
                 if to_update == "CE":
                     get_person.CE = request.form.get('data')
                 db_session.commit()
+                logging.info(f"POST /oc ok? {get_person.dict_info()}")
                 return jsonify({"message": get_person.dict_info()}), 200
+            
             else:
+                logging.info(f"POST /oc error? {request.form.get('id')}")
                 return jsonify({"Error": f"{request.form.get('id')} not found"}), 404
 
         except Exception as e:
+            logging.info(f"POST /oc error!!!! {e}")
             return jsonify({"Error": f"{e}"}), 500
 
 
@@ -255,6 +264,7 @@ def build_report(filename):
 @app.route('/reports', methods=['GET', 'POST'])
 def displayreports():
     if request.method == "GET":
+        flash('This page is deprecated and no longer maintained. It is merely here for preservation.', 'danger')
         return render_template('reports.html', form=list_reports())
 
     if request.method == "POST":
@@ -394,6 +404,75 @@ def api_test():
         return jsonify({"message": "OK"}), 200
     else:
         return jsonify({"message": "ERROR: Unauthorized"}), 401
+
+
+@app.route("/api/assist", methods=['GET'])
+def assist():
+    try:
+        if request.method == "GET":
+            attacker = request.args.get('attacker')
+            defender = request.args.get('defender')
+            defender_id = request.args.get('defenderid')
+            stats = ''
+            try:
+                stats_url = f"https://beta.tornstats.com/api/v1/{torn_key}/spy/{defender_id}"
+                res = requests.get(stats_url)
+                if res.status_code == 200 and res.json().get('spy'):
+                    if res.json()['spy']['status']:
+                        strength = res.json()['spy']['strength']
+                        defense = res.json()['spy']['defense']
+                        speed = res.json()['spy']['speed']
+                        dexterity = res.json()['spy']['dexterity']
+                        total = res.json()['spy']['total']
+                        stats = f"""
+                         Updated: {res.json()['spy']['difference']}
+                         Strength: {"N/A" if not isinstance(strength, int) else format(strength, ",")}
+                         Defense: {"N/A" if not isinstance(defense, int) else format(defense, ",")}
+                         Speed: {"N/A" if not isinstance(speed, int) else format(speed, ",")}
+                         Dexterity: {"N/A" if not isinstance(dexterity, int) else format(dexterity, ",")}
+                         Total: {"N/A" if not isinstance(total, int) else format(total, ",")}
+                         """
+            except Exception as e:
+                exc = f'{type(e).__name__}: {e}'
+                return jsonify({"error": f"tornstats failed {exc} {e}"})
+
+            basic = ''
+            try:
+                r = requests.get(f"https://api.torn.com/user/{defender_id}?selections=&key={torn_key}")
+                if r.status_code == 200 and r.json().get('name'):
+                    basic = f"""
+                     Target: {r.json()['name']} [{defender_id}]
+                     Level: {r.json()['level']}
+                     Life: {r.json()['life']['current']} / {r.json()['life']['maximum']}
+                     Faction: {r.json()['faction']['faction_name']}
+                     """
+            except Exception as e:
+                exc = f'{type(e).__name__}: {e}'
+                return jsonify({"error": f"torn api failed {exc} {e}"})
+
+            try:
+                url = "https://discord.com/api/webhooks/806933638935347290/RCS4N4ioh7gGOHkW_0mfJRBunPkz4MR81fBh3J4qehv32CiTeo0FxSLBLc75xpGjRufh"
+                #url = "https://discord.com/api/webhooks/685499633744740441/RzDqEku-tVQ4cszCeZx8I2iQ1JB09s2SZ2uehqJ_6983WXDbitavMBPftSbG3wHP-g5t" # my server
+                webhook = DiscordWebhook(url=url)
+                link = f"https://www.torn.com/loader.php?sid=attack&user2ID={defender_id}"
+                embed = DiscordEmbed(title=f'{attacker} is requesting assistance against {defender}',
+                                     description=f'{basic}'
+                                                 f'{stats}\n\n'
+                                                 f'click [here]({link}) to assist', color=242424,
+                                     timestamp=str(datetime.utcnow()))
+
+                # add embed object to webhook
+                webhook.add_embed(embed)
+                webhook.execute()
+            except Exception as e:
+                exc = f'{type(e).__name__}: {e}'
+                return jsonify({"error": f"webhook failed {exc} {e}"})
+
+            return jsonify({"message": "request sent to discord!"}), 200
+
+    except Exception as e:
+        exc = f'{type(e).__name__}: {e}'
+        return jsonify({"error": f"{exc} {e}"})
 
 
 @app.route("/api/companies", methods=['GET', 'PUT'])
