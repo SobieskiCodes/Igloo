@@ -1,6 +1,4 @@
-
-
-
+from flask_discord import DiscordOAuth2Session, requires_authorization, Unauthorized
 from flask import Flask, render_template, request, jsonify, flash, redirect, url_for, send_file
 from database import db_session
 from models import Racket, Member, WarBase, Settings, Company, Employees, OCs
@@ -19,6 +17,7 @@ from pathlib import Path
 from configparser import ConfigParser
 from datetime import datetime
 from discord_webhook import DiscordWebhook, DiscordEmbed
+
 parser = ConfigParser()
 parser.read('config.ini')
 torn_key = parser.get('secrets', 'torn_api_key')
@@ -46,6 +45,15 @@ bootstrap = Bootstrap(app)
 UPLOAD_FOLDER = './csvs/'
 ALLOWED_EXTENSIONS = ['csv']
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"
+app.config["DISCORD_CLIENT_ID"] = 729338183766245397
+app.config["DISCORD_CLIENT_SECRET"] = parser.get('secrets', 'client_secret')
+app.config["DISCORD_BOT_TOKEN"] = parser.get('secrets', 'bot_token')
+app.config["DISCORD_REDIRECT_URI"] = parser.get('secrets', 'redirect_uri')
+
+
+discord = DiscordOAuth2Session(app)
+HYPERLINK = '<a href="{}">{}</a>'
 
 
 @app.context_processor
@@ -60,17 +68,50 @@ def shutdown_session(exception=None):
 
 @app.route('/')
 def index():
+    if not discord.authorized:
+        return f'{HYPERLINK.format(url_for(".login"), "Login")} <br />'
+
     get_rackets = Racket.query.order_by(Racket.Level.desc()).all()
     return render_template('index.html', rackets=get_rackets)
 
 
+@app.route("/login/")
+def login():
+    return discord.create_session(scope=['identify'])
+
+
+@app.route("/callback/")
+def callback():
+    data = discord.callback()
+    redirect_to = data.get("redirect", "/")
+    user = discord.fetch_user()
+    if user.id in [418553337382699009, 245276992432373760]:
+        return redirect(redirect_to)
+    else:
+        discord.revoke()
+        return "Not authorized bitch."
+
+
+@app.route("/logout/")
+def logout():
+    discord.revoke()
+    return redirect(url_for(".index"))
+
+
+@app.errorhandler(Unauthorized)
+def redirect_unauthorized(e):
+    return redirect(url_for("login"))
+
+
 @app.route('/t', methods=["GET"])
+@requires_authorization
 def test123123213213():
     flash('hello world', 'danger')
     return render_template('test.html')
 
 
 @app.route('/companies', methods=["GET", "POST"])
+@requires_authorization
 def test123():
     if request.method == "POST":
         add = request.form.get('companyid')
@@ -124,6 +165,7 @@ def test123():
 
 
 @app.route('/employees', methods=["GET", "POST"])
+@requires_authorization
 def test222():
     companyid = request.args.get('companyid', default=1, type=str)
     db_query = Company.query.filter_by(ID=companyid).first()
@@ -137,6 +179,7 @@ def test222():
 
 
 @app.route('/organizedcrime', methods=["GET", "POST"])
+@requires_authorization
 def test233():
     if request.method == "GET":
         flash('This page is deprecated and no longer maintained. It is merely here for preservation.', 'danger')
@@ -160,7 +203,7 @@ def test233():
                 db_session.commit()
                 logging.info(f"POST /oc ok? {get_person.dict_info()}")
                 return jsonify({"message": get_person.dict_info()}), 200
-            
+
             else:
                 logging.info(f"POST /oc error? {request.form.get('id')}")
                 return jsonify({"Error": f"{request.form.get('id')} not found"}), 404
@@ -197,6 +240,7 @@ def list_reports():
 
 
 @app.route("/tools", methods=["GET", "POST"])
+@requires_authorization
 def thetool():
     if request.method == "GET":
         flash('This page is deprecated and no longer maintained. It is merely here for preservation.', 'danger')
@@ -262,6 +306,7 @@ def build_report(filename):
 
 
 @app.route('/reports', methods=['GET', 'POST'])
+@requires_authorization
 def displayreports():
     if request.method == "GET":
         flash('This page is deprecated and no longer maintained. It is merely here for preservation.', 'danger')
@@ -275,11 +320,13 @@ def displayreports():
 
 
 @app.route('/igloo')
+@requires_authorization
 def igloo():
     get_members = Member.query.filter(Member.Fac == facs['igloo']).all()
     return render_template('members.html', members=get_members)
 
 @app.route('/op')
+@requires_authorization
 def op():
     get_members = Member.query.filter(Member.Fac == facs['op']).all()
     return render_template('members.html', members=get_members)
@@ -301,6 +348,7 @@ class Enemy:
 
 
 @app.route('/war', methods=['GET'])
+@requires_authorization
 def thisiswar():
     if request.method == "GET":
         flash('This page is deprecated and no longer maintained. It is merely here for preservation.', 'danger')
@@ -336,6 +384,7 @@ def thisiswar():
 
 
 @app.route('/warbase', methods=['GET', 'POST'])
+@requires_authorization
 def thewarbase():
     db_query = Settings.query.order_by(Settings.WarbaseFaction).first()
     the_id = "No faction stored" if not db_query else db_query.WarbaseFaction
@@ -432,6 +481,7 @@ def assist():
                          Dexterity: {"N/A" if not isinstance(dexterity, int) else format(dexterity, ",")}
                          Total: {"N/A" if not isinstance(total, int) else format(total, ",")}
                          """
+                         
             except Exception as e:
                 exc = f'{type(e).__name__}: {e}'
                 return jsonify({"error": f"tornstats failed {exc} {e}"})
@@ -452,7 +502,7 @@ def assist():
 
             try:
                 url = "https://discord.com/api/webhooks/806933638935347290/RCS4N4ioh7gGOHkW_0mfJRBunPkz4MR81fBh3J4qehv32CiTeo0FxSLBLc75xpGjRufh"
-                #url = "https://discord.com/api/webhooks/685499633744740441/RzDqEku-tVQ4cszCeZx8I2iQ1JB09s2SZ2uehqJ_6983WXDbitavMBPftSbG3wHP-g5t" # my server
+                # url = "https://discord.com/api/webhooks/685499633744740441/RzDqEku-tVQ4cszCeZx8I2iQ1JB09s2SZ2uehqJ_6983WXDbitavMBPftSbG3wHP-g5t" # my server
                 webhook = DiscordWebhook(url=url)
                 link = f"https://www.torn.com/loader.php?sid=attack&user2ID={defender_id}"
                 embed = DiscordEmbed(title=f'{attacker} is requesting assistance against {defender}',
