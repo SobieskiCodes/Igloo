@@ -45,7 +45,6 @@ bootstrap = Bootstrap(app)
 UPLOAD_FOLDER = './csvs/'
 ALLOWED_EXTENSIONS = ['csv']
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "true"
 app.config["DISCORD_CLIENT_ID"] = 729338183766245397
 app.config["DISCORD_CLIENT_SECRET"] = parser.get('secrets', 'client_secret')
 app.config["DISCORD_BOT_TOKEN"] = parser.get('secrets', 'bot_token')
@@ -481,7 +480,6 @@ def assist():
                          Dexterity: {"N/A" if not isinstance(dexterity, int) else format(dexterity, ",")}
                          Total: {"N/A" if not isinstance(total, int) else format(total, ",")}
                          """
-                         
             except Exception as e:
                 exc = f'{type(e).__name__}: {e}'
                 return jsonify({"error": f"tornstats failed {exc} {e}"})
