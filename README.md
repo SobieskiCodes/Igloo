@@ -226,4 +226,4 @@ Add full debugging/logging
 
 Setup 'Settings' page (api key generation, users etc)
 
-Add support for discord 0auth
+Automate discord Oauth
