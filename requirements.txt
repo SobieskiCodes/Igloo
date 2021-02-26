@@ -1,4 +1,4 @@
-aiohttp==3.5.4
+aiohttp==3.7.4
 aiosqlite==0.10.0
 altgraph==0.16.1
 aniso8601==8.0.0
