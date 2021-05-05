@@ -18,7 +18,7 @@ idna==2.8
 idna-ssl==1.1.0
 imgurpython==1.1.7
 itsdangerous==1.1.0
-Jinja2==2.10.1
+Jinja2==2.11.3
 MarkupSafe==1.1.1
 multidict==4.5.2
 numpy==1.17.4
